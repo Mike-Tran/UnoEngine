@@ -1,65 +1,36 @@
-import sys
+from timeit import default_timer as timer
 
 from UnoPlayer import RandomPlayer, OffensivePlayer, UserPlayer
 from UnoGame import UnoGame
-
-default_player_count = 4
-
-# for future use to allow command line choosing of player count
-arguments = ['pc']
-argument_values = {}
-
-# keeps track of each players points and the number of games played
-point_count = {}
 
 games_to_play = 1_000
 
 completed_moves = []
 player_wins = {}
 
-
-# for future use of command line arguments
-def load_args():
-    argument_count = len(sys.argv) - 1
-    position = 0
-
-    in_value = False
-
-    while argument_count >= position:
-        arg = sys.argv[position].replace('-', '')
-
-        if not in_value:
-            if arg in arguments:
-                in_value = True
-        else:
-            last_stripped = sys.argv[position - 1].replace('-', '')
-            argument_values[last_stripped] = arg
-            in_value = False
-
-        position += 1
-
-
 if __name__ == '__main__':
-    # load_args()
-    # start game based on loaded args 
-    #print(argument_values)
-
-    # sys.setrecursionlimit(10)
+    player_types = [RandomPlayer, RandomPlayer, RandomPlayer]
+    start_timer = timer()
 
     # creates a game with the default player count, runs it and prints results
-    for i in range(0, games_to_play):
-        player_types = [OffensivePlayer, UserPlayer, RandomPlayer]
+    for i in range(games_to_play):
         game = UnoGame(player_types)
         result = game.run_game_loop()
 
-        completed_moves.append(game.move_number)
+        completed_moves.append(game.cards_played)
 
         try:
             player_wins[str(result)] += 1
         except KeyError:
             player_wins[str(result)] = 1
 
-    print(str(games_to_play) + " were played")
+        print("SIMULATED " + str(i) + " GAMES")
+
+    end_timer = timer()
+    run_time = end_timer - start_timer
+
+    print(str(games_to_play) + " games were played in " + str(run_time) + "s")
+    print("for an average runtime of " + str(games_to_play/run_time) + " games per second")
     print(player_wins)
     print(sum(completed_moves)/len(completed_moves))
 

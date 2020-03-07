@@ -8,6 +8,9 @@ class UnoGame:
 
     DEBUG = False
 
+    SLEEP = False
+    SLEEP_TIME = 4
+
     NUMS_ENABLED = True
     REVERSE_ENABLED = True
     DRAW_ENABLED = True
@@ -25,8 +28,16 @@ class UnoGame:
         self.players = []
 
         # keeps track of how many moves it took the game to play
-        # a move happens when a player plays a card
+        # a move happens when a card is played
+        # this is used for internal logic and includes observation cards
+        # observation cards are an internal construct and most ppl wouldn't consider them a turn
+        # please use cards_played as a better indicator of game length
         self.move_number = 1
+
+        # the number of cards each user has played
+        # used as the most realistic measure of game length
+        # only incremented in play_card
+        self.cards_played = 0
 
         self.current_player = 0
         self.ordered_to_right = False
@@ -34,7 +45,7 @@ class UnoGame:
         self.setup_deck()
 
         # setup players
-        for i in range(0, len(player_classes)):
+        for i in range(len(player_classes)):
 
             # create all random players for now
             player = player_classes[i](self)
@@ -52,28 +63,27 @@ class UnoGame:
 
     def run_game_loop(self):
 
+        is_first_move = True
+
         while True:
-            print("---------------------------------")
-            print("MOVE #" + str(self.move_number))
-            print("Player " + str((self.current_player % len(self.players))+1) + " to move")
-
-            card_count = len(self.discard) + len(self.deck)
-
-            for player in self.players:
-                card_count += len(player.deck)
+            if UnoGame.DEBUG:
+                print("---------------------------------")
+                print("MOVE #" + str(self.move_number))
+                print("Player " + str((self.current_player % len(self.players))+1) + " to move")
 
             current_card = self.discard[-1]
-            is_first_move = self.move_number == 1
             current_player_object = self.players[self.current_player % len(self.players)]
 
-            print("THE CURRENT CARD IS: " + current_card)
+            if UnoGame.DEBUG:
+                print("THE TOP CARD IS: " + current_card)
+                i = 1
+
+                for player in self.players:
+                    print("Player " + str(i) + ": " + str(len(player.deck)))
+                    i += 1
             # print("PLAYED DISCARD HAS: " + str(len(self.discard)))
             # print("FREE DECK HAS: " + str(len(self.deck)))
 
-            i = 1
-            for player in self.players:
-                print("Player " + str(i) + ": " + str(len(player.deck)))
-                i += 1
 
             # OBSERVE CARD
             if current_card.startswith('o'):
@@ -85,7 +95,7 @@ class UnoGame:
             elif current_card.endswith('s'):
                 self.push_observe_card(current_card)
                 self.goto_next_player(True)
-            # wild draw 4 - DONEish
+            # WILD DRAW 4
             elif current_card.endswith('wd'):
                 if is_first_move:
                     self.discard.append(self.__pick_random_card())
@@ -95,7 +105,7 @@ class UnoGame:
                         self.draw_card(current_player_object)
                     self.push_observe_card(current_card)
                     self.goto_next_player()
-            # draw 2 - DONE
+            # DRAW 2
             elif current_card.endswith('d'):
                 if is_first_move:
                     # if first card is draw just skip player
@@ -108,43 +118,48 @@ class UnoGame:
                     self.goto_next_player()
             # REVERSE CARD
             elif current_card.endswith('r'):
+                self.ordered_to_right = not self.ordered_to_right
+
                 if is_first_move:
-                    self.ordered_to_right = not self.ordered_to_right
                     self.play_card(current_player_object)
                     self.goto_next_player()
                 else:
-                    self.ordered_to_right = not self.ordered_to_right
                     self.push_observe_card(current_card)
                     self.goto_next_player(True)
                     continue
             # WILD CARD
             elif current_card.endswith('w'):
-                color = current_player_object.pick_color()
 
                 if is_first_move:
+                    color = current_player_object.pick_color()
                     self.push_observe_card(color + current_card)
                     self.play_card(current_player_object)
                     self.goto_next_player()
                 else:
                     self.play_card(current_player_object)
+            # If normal number card continue...
             else:
                 self.play_card(current_player_object)
 
             self.move_number += 1
 
-            #  if person has no cards left
+            #  if person has no cards left return index of winner
             if len(current_player_object.deck) == 0:
                 return self.current_player % len(self.players)
-            print("---------------------------------")
-            time.sleep(3)
+
+            is_first_move = False
+
+            if UnoGame.DEBUG:
+                print("---------------------------------")
+            if UnoGame.SLEEP:
+                time.sleep(UnoGame.SLEEP_TIME)
 
     def push_observe_card(self, card):
         self.discard.append('o'+card)
 
     def purge_observe_flags(self):
-        for card in self.deck:
-            if card.startswith('o'):
-                self.deck.remove(card)
+        self.deck = list(filter(lambda card: not card.startswith('o'), self.deck))
+
 
     def play_card(self, player):
         card = player.play_card()
@@ -164,6 +179,7 @@ class UnoGame:
             print(card)
             exit(-1)
 
+        self.cards_played += 1
         self.goto_next_player()
 
     def can_play_card(self, card):
@@ -232,16 +248,16 @@ class UnoGame:
             return card
         else:
             #reshuffle
+            if UnoGame.DEBUG:
+                print('RESHUFFLE')
+                print('------ WAS ------')
+                print(len(self.deck))
+                print(self.deck)
+                print(len(self.discard))
+                print(self.discard)
 
-
-            print('RESHUFFLE')
-            # print('------ WAS ------')
-            # print(len(self.deck))
-            # print(len(self.discard))
-            # print('------ NOW ------')
-
+                print('------ NOW ------')
             self.deck = self.discard[:]
-
 
             if self.deck[-1].startswith('o'):
                 self.discard = [self.deck[-2], self.deck[-1]]
@@ -251,20 +267,18 @@ class UnoGame:
                 self.discard = [self.deck[-1]]
                 self.deck.remove(self.deck[-1])
 
+            random.shuffle(self.deck)
             self.generalize_wildcards()
             self.purge_observe_flags()
-
-            # print(len(self.deck))
-            # print(len(self.discard))
 
             return self.__pick_random_card()
 
     def generalize_wildcards(self):
-        for i in range(len(self.deck)-1):
-            if self.deck[i].endswith('w'):
-                self.deck[i] = 'w'
-            if self.deck[i].endswith('wd'):
-                self.deck[i] = 'wd'
+        for i in range(len(self.discard)-1):
+            if self.discard[i].endswith('w'):
+                self.discard[i] = 'w'
+            if self.discard[i].endswith('wd'):
+                self.discard[i] = 'wd'
 
     def tally_points(self):
         points = 0
