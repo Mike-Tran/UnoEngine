@@ -1,6 +1,7 @@
 import random
 import time
 
+
 class UnoGame:
 
     # a modifiable point goal for future use with the tally function
@@ -81,9 +82,6 @@ class UnoGame:
                 for player in self.players:
                     print("Player " + str(i) + ": " + str(len(player.deck)))
                     i += 1
-            # print("PLAYED DISCARD HAS: " + str(len(self.discard)))
-            # print("FREE DECK HAS: " + str(len(self.deck)))
-
 
             # OBSERVE CARD
             if current_card.startswith('o'):
