@@ -1,5 +1,7 @@
 import random
 import operator
+import scipy.stats
+
 
 # Players are supposed to subclass this in order to make custom strategies
 class UnoPlayer:
@@ -28,6 +30,7 @@ class UnoPlayer:
         print("ERROR: Undefined color picking behavior for player")
         exit(-1)
 
+# Picks cards and colors at random
 class RandomPlayer(UnoPlayer):
     # chooses a random valid card and returns it to play
     def play_card(self):
@@ -41,6 +44,11 @@ class RandomPlayer(UnoPlayer):
     def pick_color(self):
         return ['r', 'g', 'b', 'y'][random.randint(0, 3)]
 
+# Uses this strategy found on wikipedia
+# “An offensive strategy would be holding on to Wild and Wild Draw Four cards because they can be played near the end
+# of the hand in order to go out (when it's harder to play a matching card).
+# However, an offensive strategy would suggest playing a 0 when the player wants to continue on the current color, because it is
+# less likely to be matched by another 0 of a different color (there is only one 0 of each color, but two of each 1–9).
 class OffensivePlayer(UnoPlayer):
 
     # Hold Wild and Wild Draw until end
@@ -100,6 +108,7 @@ class OffensivePlayer(UnoPlayer):
         max_sorted_colors = max(amount_per_color.items(), key=operator.itemgetter(1))
         return max_sorted_colors[0]
 
+# A player that recieves user input
 class UserPlayer(UnoPlayer):
     def pick_color(self):
 
@@ -126,3 +135,61 @@ class UserPlayer(UnoPlayer):
             if card in self.valid_cards():
                 break
         return card
+
+# Remembers what cards have been played and decides to play the card with the lowest likelihood of continuation
+# If multiple continuations are equally likely it chooses based on what they are likely to be able to conintue)
+
+# NOTE: This currently doesn't take into account non-standard options, like if say numbers are disabled
+class KeenPlayer(UnoPlayer):
+
+    def play_card(self):
+        pass
+
+
+    # These 3 functions give the percentage of the given card types the player has
+
+    def __percentage_same_number(self, number):
+
+        condition = lambda item: item.endswith(number)
+
+        amount_seen = sum(list(filter(condition, self.__cards_without_observe(self.game.discard))))
+        amount_have = sum(list(filter(condition, self.deck)))
+        amount_total = 4 if number.endswith('0') else 8
+
+        return (amount_total - amount_have - amount_seen) / amount_total
+
+    def __percentage_same_color(self, color):
+
+        condition = lambda item: item.startswith(color)
+
+        amount_seen = sum(list(filter(condition, self.__cards_without_observe(self.game.discard))))
+        amount_have = sum(list(filter(condition, self.deck)))
+        amount_total = 25
+
+        return (amount_total - amount_have - amount_seen) / amount_total
+
+    def __percentage_wild(self):
+
+        condition = lambda item: item.contains('w')
+
+        amount_seen = sum(list(filter(condition, self.__cards_without_observe(self.game.discard))))
+        amount_have = sum(list(filter(condition, self.deck)))
+        amount_total = 8
+
+        return (amount_total - amount_have - amount_seen) / amount_total
+
+    #TODO: In future just generalize function in UnoGame
+    def __cards_without_observe(self, cards):
+        return list(filter(lambda item: not item.startswith('o'), self.game.discard))
+
+# If next person has less cards it will play a special card or change the color if it can
+class ScaredPlayer(UnoPlayer):
+
+    def play_card(self):
+        pass
+
+    def pick_color(self):
+        pass
+
+    def next_has_less_cards(self):
+        return False

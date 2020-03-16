@@ -12,7 +12,12 @@ class UnoGame:
     SLEEP = False
     SLEEP_TIME = 4
 
+    # I put this in as a cool feature, but it actually makes no sense
+    # If you play with 3 ppl with no numbered cards then only 11 are in the draw pile
+    # This makes it very likely that you get a draw 4 and have to draw more cards than are left
+    # this causes a crash because its impossible so... yeah
     NUMS_ENABLED = True
+
     REVERSE_ENABLED = True
     DRAW_ENABLED = True
     SKIP_ENABLED = True
@@ -65,6 +70,7 @@ class UnoGame:
     def run_game_loop(self):
 
         is_first_move = True
+        self.current_player = random.randint(0, len(self.players)-1)
 
         while True:
             if UnoGame.DEBUG:
@@ -158,7 +164,6 @@ class UnoGame:
     def purge_observe_flags(self):
         self.deck = list(filter(lambda card: not card.startswith('o'), self.deck))
 
-
     def play_card(self, player):
         card = player.play_card()
 
@@ -214,7 +219,7 @@ class UnoGame:
             # add two skip, draw two, and reverse cards
 
             if UnoGame.SKIP_ENABLED:
-                 # S - skip
+                # S - skip
                 self.deck.append(colors[i] + 's')
                 self.deck.append(colors[i] + 's')
 
@@ -245,7 +250,7 @@ class UnoGame:
             self.deck.remove(card)
             return card
         else:
-            #reshuffle
+            # reshuffle
             if UnoGame.DEBUG:
                 print('RESHUFFLE')
                 print('------ WAS ------')
