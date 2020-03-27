@@ -4,9 +4,6 @@ import time
 
 class UnoGame:
 
-    # a modifiable point goal for future use with the tally function
-    point_goal = 500
-
     DEBUG = False
 
     SLEEP = False
@@ -169,6 +166,7 @@ class UnoGame:
 
         if card is None:
             self.draw_card(player)
+
         elif card in player.deck:
             player.deck.remove(card)
 
@@ -276,20 +274,27 @@ class UnoGame:
 
             return self.__pick_random_card()
 
-    def generalize_wildcards(self):
-        for i in range(len(self.discard)-1):
-            if self.discard[i].endswith('w'):
-                self.discard[i] = 'w'
-            if self.discard[i].endswith('wd'):
-                self.discard[i] = 'wd'
+    def generalize_wildcards(self, player = None):
+
+        working_collection = self.discard
+
+        if player is not None:
+            working_collection = player.deck
+
+        for i in range(len(working_collection)-(1 if player is None else 0)):
+            if working_collection[i].endswith('w'):
+                working_collection[i] = 'w'
+            if working_collection[i].endswith('wd'):
+                working_collection[i] = 'wd'
 
     def tally_points(self):
         points = 0
         for player in self.players:
+            self.generalize_wildcards(player=player)
+
             for card in player.deck:
                 if card.endswith('s') or card.endswith('r') or card.endswith('d'):
                     points += 20
-                    player.deck.remove(card)
                 elif card.startswith('w'):
                     points += 50
                 else:

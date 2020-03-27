@@ -2,20 +2,19 @@ import random
 import operator
 import scipy.stats
 
-
-# Players are supposed to subclass this in order to make custom strategies
+# Subclass this in order to make custom strategies
 class UnoPlayer:
-    # the cards the player has in their hand is deck
-
-    # the game the player is currently in
 
     def __init__(self, game):
+        # the game the player is currently in
         self.game = game
+        # the cards the player has in their hand is deck
         self.deck = []
-        pass
 
+    # not implemented - left up to subclasses
     def play_card(self):
-        pass
+        print("ERROR: Undefined card play function")
+        exit(-1)
 
     # returns the cards the player is allowed to play based on the game rules
     def valid_cards(self):
@@ -108,7 +107,7 @@ class OffensivePlayer(UnoPlayer):
         max_sorted_colors = max(amount_per_color.items(), key=operator.itemgetter(1))
         return max_sorted_colors[0]
 
-# A player that recieves user input
+# A player that recieves user input - used for debugging
 class UserPlayer(UnoPlayer):
     def pick_color(self):
 
@@ -136,10 +135,12 @@ class UserPlayer(UnoPlayer):
                 break
         return card
 
-# Remembers what cards have been played and decides to play the card with the lowest likelihood of continuation
-# If multiple continuations are equally likely it chooses based on what they are likely to be able to conintue)
+# TODO: This is a work in progress and unfinished
 
-# NOTE: This currently doesn't take into account non-standard options, like if say numbers are disabled
+# Remembers what cards have been played and decides to play the card with the lowest probability of continuation
+# If multiple continuations are equally probable it chooses based on what they are most likely to be able to conintue)
+
+# NOTE: This currently doesn't take into account non-standard game options, ex if certain card types are disabled
 class KeenPlayer(UnoPlayer):
 
     def play_card(self):
@@ -147,6 +148,7 @@ class KeenPlayer(UnoPlayer):
 
 
     # These 3 functions give the percentage of the given card types the player has
+    # TODO: Refactor into one function
 
     def __percentage_same_number(self, number):
 
@@ -182,6 +184,7 @@ class KeenPlayer(UnoPlayer):
     def __cards_without_observe(self, cards):
         return list(filter(lambda item: not item.startswith('o'), self.game.discard))
 
+# TODO
 # If next person has less cards it will play a special card or change the color if it can
 class ScaredPlayer(UnoPlayer):
 
